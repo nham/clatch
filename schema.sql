@@ -5,7 +5,7 @@ drop table if exists pages_tags_assoc;
 create table pages (
     id integer primary key autoincrement,
     name text not null,
-    body text not null
+    body text
 );
 
 create table tags (

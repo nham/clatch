@@ -8,9 +8,6 @@ def pandoc_convert(string):
     args = ['pandoc', '-t', 'html5', '--mathjax', '--smart']
     p = Popen(args, stdin = PIPE, stdout = PIPE)
     out, err = p.communicate(input=bytes(string, 'UTF-8'))
-    print("===========Converting=============\n\n")
-    print(string)
-    print("\n\n")
     return out.decode('UTF-8')
 
 
@@ -57,29 +54,42 @@ def init_db():
         db.commit()
 
 @app.route('/')
-def show_entries():
+def show_pages():
     db = get_db()
-    cur = db.execute('select name, body from entries order by id desc')
-    entries = cur.fetchall()
+    cur = db.execute('select name, body from pages order by id desc')
+    pages = cur.fetchall()
 
-    entries = [dict(entry) for entry in entries]
+    pages = [dict(page) for page in pages]
 
-    for entry in entries:
-        entry['body'] = pandoc_convert(entry['body'])
+    for page in pages:
+        page['body'] = pandoc_convert(page['body'])
 
-    print("AAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHHHH")
-    print(entries)
-    
-    return render_template('show_entries.html', entries=entries)
+    return render_template('show_pages.html', pages=pages)
 
 @app.route('/add', methods=['POST'])
-def add_entry():
+def add_page():
     db = get_db()
-    db.execute('insert into entries (name, body) values (?, ?)',
+
+    cur = db.execute('insert into pages (name, body) values (?, ?)',
                  [request.form['name'], request.form['body']])
+
+    pageid = cur.lastrowid
+
+    tags = request.form['tags'].split()
+    for tag in tags:
+        t = tag[1:]
+        cur = db.execute('select id from tags where name = ?', [t])
+
+        if cur.fetchone() == None:
+            cur = db.execute('insert into tags (name) values (?)', [t])
+
+        db.execute('insert into pages_tags_assoc (pageid, tagid) values (?, ?)', 
+                [pageid, cur.lastrowid])
+
+
     db.commit()
-    flash('New entry was successfully posted')
-    return redirect(url_for('show_entries'))
+    flash('New page was successfully posted')
+    return redirect(url_for('show_pages'))
 
 if __name__ == '__main__':
     app.run()
