@@ -56,13 +56,23 @@ def init_db():
 @app.route('/')
 def show_pages():
     db = get_db()
-    cur = db.execute('select name, body from pages order by id desc')
+    cur = db.execute('select id, name, body from pages order by id desc')
     pages = cur.fetchall()
 
     pages = [dict(page) for page in pages]
 
     for page in pages:
         page['body'] = pandoc_convert(page['body'])
+
+        sql = """
+            select name from tags t 
+            LEFT JOIN pages_tags_assoc a ON a.tagid = t.id
+            where a.pageid=?
+        """
+
+        cur = db.execute(sql, [page['id']])
+        tags = cur.fetchall()
+        page['tags'] = [dict(tag) for tag in tags]
 
     return render_template('show_pages.html', pages=pages)
 

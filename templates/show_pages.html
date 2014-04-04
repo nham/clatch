@@ -15,7 +15,12 @@
   {% for page in pages %}
     <li>
         <h2>{{ page.name }}</h2>
-        {{ page.body|safe }}
+        <div> {{ page.body|safe }} </div>
+        <div> 
+            {% for tag in page.tags %} 
+            #{{ tag.name }} 
+            {% endfor %} 
+        </div>
     </li>
   {% endfor %}
   </ul>
