@@ -1,15 +1,9 @@
 import os
 import sqlite3
+import time
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, Markup
 
 from subprocess import Popen, PIPE
-
-def pandoc_convert(string):
-    args = ['pandoc', '-t', 'html5', '--mathjax', '--smart']
-    p = Popen(args, stdin = PIPE, stdout = PIPE)
-    out, err = p.communicate(input=bytes(string, 'UTF-8'))
-    return out.decode('UTF-8')
-
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -23,6 +17,14 @@ app.config.update(dict(
     PASSWORD='funky'
 ))
 app.config.from_envvar('UNWISE_SETTINGS', silent=True)
+
+
+### helper functions ###
+def pandoc_convert(string):
+    args = ['pandoc', '-t', 'html5', '--mathjax', '--smart']
+    p = Popen(args, stdin = PIPE, stdout = PIPE)
+    out, err = p.communicate(input=bytes(string, 'UTF-8'))
+    return out.decode('UTF-8')
 
 def connect_db():
     """Connects to the specific database. Returns the connection."""
@@ -38,6 +40,14 @@ def get_db():
         g.sqlite_db = connect_db()
     return g.sqlite_db
 
+def init_db():
+    with app.app_context():
+        db = get_db()
+        with app.open_resource('schema.sql', mode='r') as f:
+            db.cursor().executescript(f.read())
+        db.commit()
+
+
 
 @app.teardown_appcontext
 def close_db(error):
@@ -46,16 +56,10 @@ def close_db(error):
         g.sqlite_db.close()
 
 
-def init_db():
-    with app.app_context():
-        db = get_db()
-        with app.open_resource('schema.sql', mode='r') as f:
-            db.cursor().executescript(f.read())
-        db.commit()
-
 @app.route('/')
-def show_pages():
+def show_index():
     db = get_db()
+
     cur = db.execute('select id, name, body from pages order by id desc')
     pages = cur.fetchall()
 
@@ -74,9 +78,35 @@ def show_pages():
         tags = cur.fetchall()
         page['tags'] = [dict(tag) for tag in tags]
 
-    return render_template('show_pages.html', pages=pages)
 
-@app.route('/add', methods=['POST'])
+    # log entries
+    cur = db.execute('select id, body, ts from logs order by id desc')
+    logs = cur.fetchall()
+
+    logs = [dict(log) for log in logs]
+
+    for log in logs:
+        log['body'] = pandoc_convert(log['body'])
+
+        sql = """
+            select name from tags t 
+            LEFT JOIN logs_tags_assoc a ON a.tagid = t.id
+            where a.logid=?
+        """
+
+        cur = db.execute(sql, [log['id']])
+        tags = cur.fetchall()
+        log['tags'] = [dict(tag) for tag in tags]
+
+    return render_template('show_index.html', pages=pages, logs=logs)
+
+@app.route('/page/new')
+def show_new_page_form():
+    db = get_db()
+    return render_template('show_new_page_form.html')
+
+
+@app.route('/page/add', methods=['POST'])
 def add_page():
     db = get_db()
 
@@ -99,7 +129,38 @@ def add_page():
 
     db.commit()
     flash('New page was successfully posted')
-    return redirect(url_for('show_pages'))
+    return redirect(url_for('show_index'))
+
+
+@app.route('/log/new')
+def show_new_log_form():
+    db = get_db()
+    return render_template('show_new_log_form.html')
+
+@app.route('/log/add', methods=['POST'])
+def add_log():
+    db = get_db()
+
+    cur = db.execute('insert into logs (body, ts) values (?, ?)',
+                 [request.form['body'], round(time.time())])
+
+    logid = cur.lastrowid
+
+    tags = request.form['tags'].split()
+    for tag in tags:
+        t = tag[1:]
+        cur = db.execute('select id from tags where name = ?', [t])
+
+        if cur.fetchone() == None:
+            cur = db.execute('insert into tags (name) values (?)', [t])
+
+        db.execute('insert into logs_tags_assoc (logid, tagid) values (?, ?)', 
+                [logid, cur.lastrowid])
+
+
+    db.commit()
+    flash('New log was successfully posted')
+    return redirect(url_for('show_index'))
 
 if __name__ == '__main__':
     app.run()

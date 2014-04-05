@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block body %}
+  <ul class=section>
+  {% for page in pages %}
+    <li>
+        <h2>{{ page.name }}</h2>
+        <div> {{ page.body|safe }} </div>
+        <div> 
+            {% for tag in page.tags %} 
+            #{{ tag.name }} 
+            {% endfor %} 
+        </div>
+    </li>
+  {% endfor %}
+  </ul>
+
+  <ul class=section>
+  {% for log in logs %}
+    <li>
+        <div>Created {{ log.ts }}</div>
+        <div> {{ log.body|safe }} </div>
+        <div> 
+            {% for tag in log.tags %} 
+            #{{ tag.name }} 
+            {% endfor %} 
+        </div>
+    </li>
+  {% endfor %}
+  </ul>
+{% endblock %}

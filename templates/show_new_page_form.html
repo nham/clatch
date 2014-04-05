@@ -6,22 +6,9 @@
         <dd><input type=text size=50 name=name>
         <dt>Tags:
         <dd><input type=text size=50 name=tags>
-        <dt>Text:
+        <dt>Body:
         <dd><textarea name=body rows=5 cols=60></textarea>
         <dd><input type=submit value=Share>
       </dl>
     </form>
-  <ul class=entries>
-  {% for page in pages %}
-    <li>
-        <h2>{{ page.name }}</h2>
-        <div> {{ page.body|safe }} </div>
-        <div> 
-            {% for tag in page.tags %} 
-            #{{ tag.name }} 
-            {% endfor %} 
-        </div>
-    </li>
-  {% endfor %}
-  </ul>
 {% endblock %}
