@@ -12,13 +12,13 @@ app.config.from_object(__name__)
 
 # Load default config and override config from an environment variable
 app.config.update(dict(
-    DATABASE=os.path.join(app.root_path, 'unwise.db'),
+    DATABASE=os.path.join(app.root_path, 'clatch.db'),
     DEBUG=True,
     SECRET_KEY='development key',
     USERNAME='admin',
     PASSWORD='funky'
 ))
-app.config.from_envvar('UNWISE_SETTINGS', silent=True)
+app.config.from_envvar('CLATCH_SETTINGS', silent=True)
 
 
 ### helper functions ###
