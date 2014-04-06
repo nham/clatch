@@ -34,3 +34,10 @@ create table logs_tags_assoc (
     FOREIGN KEY(logid) REFERENCES logs(id),
     FOREIGN KEY(tagid) REFERENCES tags(id)
 );
+
+create table logs_pages_assoc (
+    logid integer,
+    pageid integer,
+    FOREIGN KEY(logid) REFERENCES logs(id),
+    FOREIGN KEY(pageid) REFERENCES pages(id)
+);
