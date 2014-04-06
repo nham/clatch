@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block body %}
+    <form action="{{ url_for('update_page') }}" method=post class=add-entry>
+      <dl>
+        <dt>Title:
+        <dd><input type=text size=50 name=name value="{{ page.name }}">
+        <dt>Tags:
+        <dd><input type=text size=50 name=tags value="{{ page.tags }}">
+        <dt>Body:
+        <dd><textarea name=body rows=5 cols=60>{{ page.body }}</textarea>
+        <dd><input type=submit value=Share>
+      </dl>
+    </form>
+{% endblock %}

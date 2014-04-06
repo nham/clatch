@@ -56,6 +56,28 @@ def close_db(error):
         g.sqlite_db.close()
 
 
+def query_page_by_slug(db, slug):
+    cur = db.execute('select id, name, body from pages where slug=? order by id desc', [slug])
+    page = cur.fetchone()
+
+    if page is None:
+        return page
+
+    page = dict(page)
+
+    sql = """
+        select name from tags t 
+        LEFT JOIN pages_tags_assoc a ON a.tagid = t.id
+        where a.pageid=?
+    """
+
+    cur = db.execute(sql, [page['id']])
+    tags = cur.fetchall()
+    page['tags'] = [dict(tag) for tag in tags]
+
+    return page
+
+
 ### routes ###
 
 @app.route('/')
@@ -107,39 +129,68 @@ def show_new_page_form():
     db = get_db()
     return render_template('show_new_page_form.html')
 
-
-@app.route('/page/name/<slug>')
-def show_page(slug):
+@app.route('/page/edit/<slug>')
+def show_edit_page_form(slug):
     db = get_db()
+    page = query_page_by_slug(get_db(), slug)
 
-    cur = db.execute('select id, name, body from pages where slug=? order by id desc', [slug])
-    page = cur.fetchone()
+    tags = page['tags']
+    newtags = '#' + tags[0]['name']
+
+    for tag in tags[1:]:
+        newtags += ' #' + tag['name']
+
+    page['tags'] = newtags
 
     if page is None:
         return render_template('404.html')
+    else:
+        return render_template('show_edit_page_form.html', page=page)
 
-    page = dict(page)
 
+@app.route('/page/name/<slug>')
+def show_page(slug):
+    page = query_page_by_slug(get_db(), slug)
     page['body'] = pandoc_convert(page['body'])
 
-    sql = """
-        select name from tags t 
-        LEFT JOIN pages_tags_assoc a ON a.tagid = t.id
-        where a.pageid=?
-    """
-
-    cur = db.execute(sql, [page['id']])
-    tags = cur.fetchall()
-    page['tags'] = [dict(tag) for tag in tags]
-
-    return render_template('show_page.html', page=page)
+    if page is None:
+        return render_template('404.html')
+    else:
+        return render_template('show_page.html', page=page)
 
 
 @app.route('/page/add', methods=['POST'])
 def add_page():
     db = get_db()
 
-    cur = db.execute('insert into pages (name, slug, body) values (?, ?)',
+    cur = db.execute('insert into pages (name, slug, body) values (?, ?, ?)',
+                 [request.form['name'], request.form['body'], slugify(request.form['name'])])
+
+    pageid = cur.lastrowid
+
+    tags = request.form['tags'].split()
+    for tag in tags:
+        t = tag[1:]
+        cur = db.execute('select id from tags where name = ?', [t])
+
+        if cur.fetchone() == None:
+            cur = db.execute('insert into tags (name) values (?)', [t])
+
+        db.execute('insert into pages_tags_assoc (pageid, tagid) values (?, ?)', 
+                [pageid, cur.lastrowid])
+
+
+    db.commit()
+    flash('New page was successfully posted')
+    return redirect(url_for('show_index'))
+
+
+@app.route('/page/update', methods=['POST'])
+def update_page():
+    db = get_db()
+
+    # TODO: make this work
+    cur = db.execute('update pages set name=?, slug=?, body=? where id=?',
                  [request.form['name'], request.form['body'], slugify(request.form['name'])])
 
     pageid = cur.lastrowid
