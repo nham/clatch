@@ -7,6 +7,7 @@ drop table if exists logs_tags_assoc;
 create table pages (
     id integer primary key autoincrement,
     name text not null,
+    slug text not null,
     body text
 );
 

@@ -1,6 +1,8 @@
 import os
 import sqlite3
 import time
+from slugify import slugify # awesome-slugify
+
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, Markup
 
 from subprocess import Popen, PIPE
@@ -47,8 +49,6 @@ def init_db():
             db.cursor().executescript(f.read())
         db.commit()
 
-
-
 @app.teardown_appcontext
 def close_db(error):
     """Closes the database again at the end of the request."""
@@ -56,11 +56,13 @@ def close_db(error):
         g.sqlite_db.close()
 
 
+### routes ###
+
 @app.route('/')
 def show_index():
     db = get_db()
 
-    cur = db.execute('select id, name, body from pages order by id desc')
+    cur = db.execute('select id, name, slug, body from pages order by id desc')
     pages = cur.fetchall()
 
     pages = [dict(page) for page in pages]
@@ -106,12 +108,39 @@ def show_new_page_form():
     return render_template('show_new_page_form.html')
 
 
+@app.route('/page/name/<slug>')
+def show_page(slug):
+    db = get_db()
+
+    cur = db.execute('select id, name, body from pages where slug=? order by id desc', [slug])
+    page = cur.fetchone()
+
+    if page is None:
+        return render_template('404.html')
+
+    page = dict(page)
+
+    page['body'] = pandoc_convert(page['body'])
+
+    sql = """
+        select name from tags t 
+        LEFT JOIN pages_tags_assoc a ON a.tagid = t.id
+        where a.pageid=?
+    """
+
+    cur = db.execute(sql, [page['id']])
+    tags = cur.fetchall()
+    page['tags'] = [dict(tag) for tag in tags]
+
+    return render_template('show_page.html', page=page)
+
+
 @app.route('/page/add', methods=['POST'])
 def add_page():
     db = get_db()
 
-    cur = db.execute('insert into pages (name, body) values (?, ?)',
-                 [request.form['name'], request.form['body']])
+    cur = db.execute('insert into pages (name, slug, body) values (?, ?)',
+                 [request.form['name'], request.form['body'], slugify(request.form['name'])])
 
     pageid = cur.lastrowid
 

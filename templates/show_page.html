@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block body %}
+  <div class=section>
+    <h2>{{ page.name }}</h2>
+    <div> {{ page.body|safe }} </div>
+    <div> 
+        {% for tag in page.tags %} 
+        #{{ tag.name }} 
+        {% endfor %} 
+    </div>
+  </div>
+{% endblock %}

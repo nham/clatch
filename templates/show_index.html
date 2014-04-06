@@ -3,8 +3,7 @@
   <ul class=section>
   {% for page in pages %}
     <li>
-        <h2>{{ page.name }}</h2>
-        <div> {{ page.body|safe }} </div>
+        <h2><a href="/page/name/{{ page.slug }}">{{ page.name }}</a></h2>
         <div> 
             {% for tag in page.tags %} 
             #{{ tag.name }} 
