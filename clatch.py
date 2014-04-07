@@ -57,7 +57,7 @@ def close_db(error):
 
 
 def query_page_by_slug(db, slug):
-    cur = db.execute('select id, name, body from pages where slug=? order by id desc', [slug])
+    cur = db.execute('select id, name, slug, body from pages where slug=? order by id desc', [slug])
     page = cur.fetchone()
 
     if page is None:
@@ -134,17 +134,29 @@ def show_edit_page_form(slug):
     db = get_db()
     page = query_page_by_slug(get_db(), slug)
 
-    tags = page['tags']
-    newtags = '#' + tags[0]['name']
+    if page is None:
+        return render_template('404.html')
+    else:
+        tags = page['tags']
+        newtags = '#' + tags[0]['name']
 
-    for tag in tags[1:]:
-        newtags += ' #' + tag['name']
+        for tag in tags[1:]:
+            newtags += ' #' + tag['name']
 
-    page['tags'] = newtags
+        page['tags'] = newtags
+
+        return render_template('show_edit_page_form.html', page=page)
+
+@app.route('/page/delete/<slug>')
+def delete_page(slug):
+    db = get_db()
+    cur = db.execute('select id, name, slug, body from pages where slug=? order by id desc', [slug])
+    page = cur.fetchone()
 
     if page is None:
         return render_template('404.html')
     else:
+        db.execute('delete from pages where id=?', [page['id']])
         return render_template('show_edit_page_form.html', page=page)
 
 
