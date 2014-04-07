@@ -3,7 +3,7 @@ import sqlite3
 import time
 from slugify import slugify # awesome-slugify
 
-from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, Markup
+from flask import Flask, request, g, jsonify, abort, make_response
 
 from subprocess import Popen, PIPE
 
@@ -54,6 +54,10 @@ def close_db(error):
     """Closes the database again at the end of the request."""
     if hasattr(g, 'sqlite_db'):
         g.sqlite_db.close()
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
 
 
 def query_page_by_slug(db, slug):
@@ -147,91 +151,6 @@ def show_edit_page_form(slug):
 
         return render_template('show_edit_page_form.html', page=page)
 
-@app.route('/page/delete/<slug>')
-def delete_page(slug):
-    db = get_db()
-    cur = db.execute('select id, name, slug, body from pages where slug=? order by id desc', [slug])
-    page = cur.fetchone()
-
-    if page is None:
-        return render_template('404.html')
-    else:
-        db.execute('delete from pages where id=?', [page['id']])
-        return render_template('show_edit_page_form.html', page=page)
-
-
-@app.route('/page/name/<slug>')
-def show_page(slug):
-    page = query_page_by_slug(get_db(), slug)
-    page['body'] = pandoc_convert(page['body'])
-
-    if page is None:
-        return render_template('404.html')
-    else:
-        return render_template('show_page.html', page=page)
-
-
-@app.route('/page/add', methods=['POST'])
-def add_page():
-    db = get_db()
-
-    cur = db.execute('insert into pages (name, slug, body) values (?, ?, ?)',
-                 [request.form['name'], request.form['body'], slugify(request.form['name'])])
-
-    pageid = cur.lastrowid
-
-    tags = request.form['tags'].split()
-    for tag in tags:
-        t = tag[1:]
-        cur = db.execute('select id from tags where name = ?', [t])
-
-        if cur.fetchone() == None:
-            cur = db.execute('insert into tags (name) values (?)', [t])
-
-        db.execute('insert into pages_tags_assoc (pageid, tagid) values (?, ?)', 
-                [pageid, cur.lastrowid])
-
-
-    db.commit()
-    flash('New page was successfully created')
-    return redirect(url_for('show_index'))
-
-
-@app.route('/page/update', methods=['POST'])
-def update_page():
-    db = get_db()
-
-    # TODO: make this work
-    cur = db.execute('update pages set name=?, body=?, slug=? where id=?',
-                 [request.form['name'], request.form['body'], 
-                  slugify(request.form['name']), request.form['id']])
-
-    pageid = request.form['id']
-
-    tags = request.form['tags'].split()
-    for tag in tags:
-        t = tag[1:]
-        cur = db.execute('select id from tags where name = ?', [t])
-
-        if cur.fetchone() == None:
-            cur = db.execute('insert into tags (name) values (?)', [t])
-
-        tagid = cur.lastrowid
-
-        cur = db.execute("""select pageid from pages_tags_assoc 
-                            where pageid = ? and tagid = ?""", 
-                         [pageid, tagid])
-
-        if cur.fetchone() == None:
-            db.execute("""insert into pages_tags_assoc (pageid, tagid) 
-                          values (?, ?)""", 
-                       [pageid, cur.lastrowid])
-
-
-    db.commit()
-    flash('Page was successfully updated')
-    return redirect(url_for('show_index'))
-
 
 @app.route('/log/new')
 def show_new_log_form():
@@ -262,6 +181,151 @@ def add_log():
     db.commit()
     flash('New log was successfully posted')
     return redirect(url_for('show_index'))
+
+
+@app.route('/pages', methods=['GET'])
+def get_pages():
+    db = get_db()
+
+    cur = db.execute('select id, name, slug, body from pages order by id desc')
+    pages = cur.fetchall()
+
+    pages = [dict(page) for page in pages]
+
+    for page in pages:
+        page['body'] = pandoc_convert(page['body'])
+
+        sql = """
+            select name from tags t 
+            LEFT JOIN pages_tags_assoc a ON a.tagid = t.id
+            where a.pageid=?
+        """
+
+        cur = db.execute(sql, [page['id']])
+        tags = cur.fetchall()
+        page['tags'] = [dict(tag) for tag in tags]
+
+    return jsonify({ 'pages': pages})
+
+@app.route('/pages/<int:id>', methods=['GET'])
+def get_page(id):
+    db = get_db()
+
+    cur = db.execute('select id, name, slug, body from pages where id=?', [id])
+    page = cur.fetchone()
+
+    if page is None:
+        abort(404)
+
+    page = dict(page)
+
+    sql = """
+        select name from tags t 
+        LEFT JOIN pages_tags_assoc a ON a.tagid = t.id
+        where a.pageid=?
+    """
+
+    cur = db.execute(sql, [page['id']])
+    tags = cur.fetchall()
+    page['tags'] = [dict(tag) for tag in tags]
+
+    return jsonify({ 'page': page})
+
+
+@app.route('/pages/', methods=['POST'])
+def add_page():
+    db = get_db()
+
+    if not request.json or not 'name' in request.json:
+        abort(400)
+
+    cur = db.execute('insert into pages (name, slug, body) values (?, ?, ?)',
+                 [request.json['name'], slugify(request.json['name']), request.json['body']])
+
+    pageid = cur.lastrowid
+
+    tags = request.json['tags'].split()
+    for tag in tags:
+        t = tag[1:]
+        cur = db.execute('select id from tags where name = ?', [t])
+
+        if cur.fetchone() == None:
+            cur = db.execute('insert into tags (name) values (?)', [t])
+
+        db.execute('insert into pages_tags_assoc (pageid, tagid) values (?, ?)', 
+                [pageid, cur.lastrowid])
+
+    db.commit()
+    return jsonify({'id': pageid}), 201
+
+
+@app.route('/pages/<int:id>', methods=['PUT'])
+def update_page(id):
+    db = get_db()
+
+    cur = db.execute('select id, name, slug, body from pages where id=?', [id])
+    page = cur.fetchone()
+
+    if page is None:
+        abort(404)
+
+    if not request.json:
+        abort(400)
+
+    cur = db.execute('update pages set name=?, body=?, slug=? where id=?',
+                 [request.json['name'], request.json['body'], 
+                  slugify(request.json['name']), id])
+
+
+    tags = request.json['tags'].split()
+    new_tags = set()
+    for tag in tags:
+        t = tag[1:]
+        cur = db.execute('select id from tags where name = ?', [t])
+
+        fetch = cur.fetchone()
+        if fetch == None:
+            cur = db.execute('insert into tags (name) values (?)', [t])
+            new_tags.add(cur.lastrowid)
+        else:
+            new_tags.add(fetch[0])
+
+    cur = db.execute("select tagid from pages_tags_assoc where pageid = ?", 
+                     [id])
+    fetch = cur.fetchall()
+    old_tags = set([tag[0] for tag in fetch])
+
+    intersection = new_tags & old_tags
+    add_tags = new_tags - intersection
+    remove_tags = old_tags - intersection
+
+    for tag in remove_tags:
+        db.execute('delete from pages_tags_assoc where pageid=? and tagid=?',
+                    [id, tag])
+
+    for tag in add_tags:
+        db.execute('insert into pages_tags_assoc (pageid, tagid) values (?, ?)', 
+                   [id, tag])
+
+    db.commit()
+    return jsonify({'result': True})
+
+
+@app.route('/pages/<int:id>', methods=['DELETE'])
+def delete_page(id):
+    db = get_db()
+
+    cur = db.execute('select id, name, slug, body from pages where id=?', [id])
+    page = cur.fetchone()
+
+    if page is None:
+        abort(404)
+
+    cur = db.execute('delete from pages where id=?', [id])
+    db.commit()
+    return jsonify({'result': True})
+
+
 
 if __name__ == '__main__':
     app.run()
