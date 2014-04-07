@@ -181,7 +181,7 @@ def add_page():
 
 
     db.commit()
-    flash('New page was successfully posted')
+    flash('New page was successfully created')
     return redirect(url_for('show_index'))
 
 
@@ -190,10 +190,11 @@ def update_page():
     db = get_db()
 
     # TODO: make this work
-    cur = db.execute('update pages set name=?, slug=?, body=? where id=?',
-                 [request.form['name'], request.form['body'], slugify(request.form['name'])])
+    cur = db.execute('update pages set name=?, body=?, slug=? where id=?',
+                 [request.form['name'], request.form['body'], 
+                  slugify(request.form['name']), request.form['id']])
 
-    pageid = cur.lastrowid
+    pageid = request.form['id']
 
     tags = request.form['tags'].split()
     for tag in tags:
@@ -203,12 +204,20 @@ def update_page():
         if cur.fetchone() == None:
             cur = db.execute('insert into tags (name) values (?)', [t])
 
-        db.execute('insert into pages_tags_assoc (pageid, tagid) values (?, ?)', 
-                [pageid, cur.lastrowid])
+        tagid = cur.lastrowid
+
+        cur = db.execute("""select pageid from pages_tags_assoc 
+                            where pageid = ? and tagid = ?""", 
+                         [pageid, tagid])
+
+        if cur.fetchone() == None:
+            db.execute("""insert into pages_tags_assoc (pageid, tagid) 
+                          values (?, ?)""", 
+                       [pageid, cur.lastrowid])
 
 
     db.commit()
-    flash('New page was successfully posted')
+    flash('Page was successfully updated')
     return redirect(url_for('show_index'))
 
 
