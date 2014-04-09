@@ -27,6 +27,7 @@
           return (
             <div className="logDisplay">
               <SearchBox />
+              <NewLogForm />
               <LogList entries={this.props.entries} />
             </div>
           );
@@ -38,6 +39,25 @@
           return (
             <div className="searchBox">
               <input type="text" />
+            </div>
+          );
+        }
+      });
+
+      var NewLogForm = React.createClass({
+        render: function() {
+          return (
+            <div className="newLogForm">
+              New log entry:
+              <form>
+                <dl>
+                  <dt>Body:</dt>
+                  <dd><textarea name="body" rows="20" cols="80"></textarea></dd>
+                  <dt>Tags:</dt>
+                  <dd><input type="text" size="50" name="tags" /></dd>
+                  <dd><input type="submit" value="Submit" /></dd>
+                </dl>
+              </form>
             </div>
           );
         }

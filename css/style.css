@@ -10,6 +10,14 @@ body {
     width: 90%;
 }
 
+.searchBox {
+    margin-bottom: 50px;
+}
+
+.searchBox input {
+    width: 500px;
+}
+
 .logEntry {
     border: 1px dotted #333;
     margin: 20 0px;
