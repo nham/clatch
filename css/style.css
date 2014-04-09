@@ -1,0 +1,12 @@
+body { 
+    font-family: sans-serif; 
+    background: #f9f9f9;
+}
+
+.logEntry {
+    border: 1px solid #333;
+    margin: 20 0px;
+    padding: 5px;
+    width: 800px;
+}
+

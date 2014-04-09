@@ -1,0 +1,96 @@
+<!-- template.html -->
+<html>
+  <head>
+    <title>Clatch</title>
+    <script src="lib/react-0.10.0.js"></script>
+    <script src="lib/JSXTransformer-0.10.0.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body>
+    <div id="content"></div>
+    <script type="text/jsx">
+      /**
+       * @jsx React.DOM
+       */
+      
+      /*
+         - LogDisplay
+            - SearchBox
+            - LogList
+               - Log Entry
+                  - LogBox
+                     - Log
+                     - TagList
+                  - AssociatedPageList
+
+       */
+      var LogDisplay = React.createClass({
+        render: function() {
+          return (
+            <div className="logDisplay">
+              <SearchBox />
+              <LogList entries={this.props.entries} />
+            </div>
+          );
+        }
+      });
+
+      var SearchBox = React.createClass({
+        render: function() {
+          return (
+            <div className="searchBox">
+              <input type="text" />
+            </div>
+          );
+        }
+      });
+
+      var LogList = React.createClass({
+        render: function() {
+            var logNodes = this.props.entries.map(function(entry) {
+                return <LogEntry entry={entry} />;
+            });
+
+          return (
+            <div className="logList">
+                {logNodes}
+            </div>
+          );
+        }
+      });
+
+      var LogEntry = React.createClass({
+        render: function() {
+          return (
+            <div className="logEntry">
+                <LogBox entry={this.props.entry} />
+                <div>Associated Page List goes here</div>
+            </div>
+          );
+        }
+      });
+
+      var LogBox = React.createClass({
+        render: function() {
+          return (
+            <div className="logBox">
+                <div>time goes here?</div>
+                {this.props.entry.body}
+                <div>tags go here?</div>
+            </div>
+          );
+        }
+      });
+
+    var entries = [
+        {body: 'rock your body'},
+        {body: 'dis be body 2'}
+    ];
+
+      React.renderComponent(
+        <LogDisplay entries={entries}/>,
+        document.getElementById('content')
+      );
+    </script>
+  </body>
+</html>
