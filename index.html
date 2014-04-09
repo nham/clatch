@@ -19,8 +19,6 @@
             - LogList
                - Log Entry
                   - LogBox
-                     - Log
-                     - TagList
                   - AssociatedPageList
 
        */
@@ -64,7 +62,7 @@
           return (
             <div className="logEntry">
                 <LogBox entry={this.props.entry} />
-                <div>Associated Page List goes here</div>
+                <AssocPageList pages={this.props.entry.pages} />
             </div>
           );
         }
@@ -72,19 +70,43 @@
 
       var LogBox = React.createClass({
         render: function() {
+            var tagNodes = this.props.entry.tags.map(function(tag) {
+                return <li>{tag}</li>;
+            });
           return (
             <div className="logBox">
-                <div>time goes here?</div>
+                <div>{this.props.entry.datetime}</div>
                 {this.props.entry.body}
-                <div>tags go here?</div>
+                <ul className="logList">{tagNodes}</ul>
             </div>
           );
         }
       });
 
+      var AssocPageList = React.createClass({
+        render: function() {
+            var pageNodes = this.props.pages.map(function(page) {
+                return <li>{page}</li>;
+            });
+          return (
+            <div className="assocPageList">
+                <ul>{pageNodes}</ul>
+            </div>
+          );
+        }
+      });
+
+
     var entries = [
-        {body: 'rock your body'},
-        {body: 'dis be body 2'}
+        {body: 'rock your body', 
+         tags: ['butt', 'IsItWorthItLetMeWorkIt'], 
+         pages: ['Silk', 'Dragons'], 
+         datetime: "07 Apr 2014 08:45"},
+
+        {body: 'dis be body 2', 
+         tags: ['peace', 'JustDoIt', 'butt'], 
+         pages: ['Rainbows'], 
+         datetime: "20 Apr 2014 07:06"}
     ];
 
       React.renderComponent(
