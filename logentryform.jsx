@@ -6,9 +6,10 @@ var LogForm = React.createClass({
   render: function() {
     var body = "";
     var tags = "";
+    console.log(this.props.entry);
     if (this.props.entry !== undefined) {
         body = this.props.entry.body;
-        tags = this.props.entry.tags;
+        tags = this.props.entry.tags.map(function(tag) { return "#"+tag; }).join(', ');
     }
 
     var text = "";

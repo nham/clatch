@@ -49,7 +49,9 @@
                 } else if (this.state.nowShowing === clatch.newlog) {
                     return <LogForm />;
                 } else if (this.state.nowShowing === clatch.editlog) {
-                    return <LogForm entry={this.props.data} id={this.state.id} />;
+                    var id = parseInt(this.state.id, 10);
+                    var entry = this.props.data.filter(function(entry) { return entry['id'] === id; });
+                    return <LogForm entry={entry[0]} id={this.state.id} />;
                 }
             }
           });
