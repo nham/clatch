@@ -4,135 +4,70 @@
     <title>Clatch</title>
     <script src="lib/react-0.10.0.js"></script>
     <script src="lib/JSXTransformer-0.10.0.js"></script>
+    <script src="lib/jquery-2.1.0.js"></script>
+    <script src="lib/director.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
   </head>
   <body>
     <div id="content"></div>
+    <script type="text/jsx" src="logdisplay.jsx"></script>
+    <script type="text/jsx" src="logentryform.jsx"></script>
     <script type="text/jsx">
       /**
        * @jsx React.DOM
        */
       
-      /*
-         - LogDisplay
-            - SearchBox
-            - LogList
-               - Log Entry
-                  - LogBox
-                  - AssociatedPageList
+      (function() {
+          var clatch = {};
+          clatch.loglist = 'loglist';
+          clatch.newlog = 'newlog';
+          clatch.editlog = 'editlog';
 
-       */
-      var LogDisplay = React.createClass({
-        render: function() {
-          return (
-            <div className="logDisplay">
-              <SearchBox />
-              <NewLogForm />
-              <LogList entries={this.props.entries} />
-            </div>
+          var Clatch = React.createClass({
+            getInitialState: function() {
+                return {nowShowing: 'loglist'};
+            },
+
+            componentDidMount: function () {
+                var setState = this.setState;
+                var router = Router({
+                '/': setState.bind(this, {nowShowing: clatch.loglist}),
+                '/log/new': setState.bind(this, {nowShowing: clatch.newlog}),
+                '/log/edit': setState.bind(this, {nowShowing: clatch.editlog})
+                });
+                router.init('/');
+            },
+
+            render: function() {
+                console.log(this.state.nowShowing);
+                if (this.state.nowShowing === clatch.loglist) {
+                    return <LogDisplay entries={this.props.data}/>;
+                } else if (this.state.nowShowing === clatch.newlog) {
+                    return <LogForm />;
+                } else if (this.state.nowShowing === clatch.newlog) {
+                    return <LogForm entry={this.props.data} />;
+                }
+            }
+          });
+
+
+          var entries = [
+            {body: 'rock your body', 
+             tags: ['butt', 'IsItWorthItLetMeWorkIt'], 
+             pages: ['Silk', 'Dragons'], 
+             datetime: "07 Apr 2014 08:45"},
+
+            {body: 'dis be body 2', 
+             tags: ['peace', 'JustDoIt', 'butt'], 
+             pages: ['Rainbows'], datetime: "20 Apr 2014 07:06"}
+          ];
+
+          React.renderComponent(
+            <Clatch data={entries}/>,
+            document.getElementById('content')
           );
-        }
-      });
 
-      var SearchBox = React.createClass({
-        render: function() {
-          return (
-            <div className="searchBox">
-              <input type="text" />
-            </div>
-          );
-        }
-      });
-
-      var NewLogForm = React.createClass({
-        render: function() {
-          return (
-            <div className="newLogForm">
-              New log entry:
-              <form>
-                <dl>
-                  <dt>Body:</dt>
-                  <dd><textarea name="body" rows="20" cols="80"></textarea></dd>
-                  <dt>Tags:</dt>
-                  <dd><input type="text" size="50" name="tags" /></dd>
-                  <dd><input type="submit" value="Submit" /></dd>
-                </dl>
-              </form>
-            </div>
-          );
-        }
-      });
-
-      var LogList = React.createClass({
-        render: function() {
-            var logNodes = this.props.entries.map(function(entry) {
-                return <LogEntry entry={entry} />;
-            });
-
-          return (
-            <div className="logList">
-                {logNodes}
-            </div>
-          );
-        }
-      });
-
-      var LogEntry = React.createClass({
-        render: function() {
-          return (
-            <div className="logEntry">
-                <LogBox entry={this.props.entry} />
-                <AssocPageList pages={this.props.entry.pages} />
-            </div>
-          );
-        }
-      });
-
-      var LogBox = React.createClass({
-        render: function() {
-            var tagNodes = this.props.entry.tags.map(function(tag) {
-                return <li>{tag}</li>;
-            });
-          return (
-            <div className="logBox">
-                <div>{this.props.entry.datetime}</div>
-                {this.props.entry.body}
-                <ul className="logList">{tagNodes}</ul>
-            </div>
-          );
-        }
-      });
-
-      var AssocPageList = React.createClass({
-        render: function() {
-            var pageNodes = this.props.pages.map(function(page) {
-                return <li>{page}</li>;
-            });
-          return (
-            <div className="assocPageList">
-                <ul>{pageNodes}</ul>
-            </div>
-          );
-        }
-      });
-
-
-    var entries = [
-        {body: 'rock your body', 
-         tags: ['butt', 'IsItWorthItLetMeWorkIt'], 
-         pages: ['Silk', 'Dragons'], 
-         datetime: "07 Apr 2014 08:45"},
-
-        {body: 'dis be body 2', 
-         tags: ['peace', 'JustDoIt', 'butt'], 
-         pages: ['Rainbows'], 
-         datetime: "20 Apr 2014 07:06"}
-    ];
-
-      React.renderComponent(
-        <LogDisplay entries={entries}/>,
-        document.getElementById('content')
-      );
+    })();
     </script>
   </body>
 </html>
