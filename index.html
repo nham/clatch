@@ -1,4 +1,3 @@
-<!-- template.html -->
 <html>
   <head>
     <title>Clatch</title>
@@ -30,11 +29,16 @@
 
             componentDidMount: function () {
                 var setState = this.setState;
+                var boundSetState = setState.bind(this);
+
                 var router = Router({
-                '/': setState.bind(this, {nowShowing: clatch.loglist}),
-                '/log/new': setState.bind(this, {nowShowing: clatch.newlog}),
-                '/log/edit': setState.bind(this, {nowShowing: clatch.editlog})
-                });
+                    '/': setState.bind(this, {nowShowing: clatch.loglist}),
+                    '/log/new': setState.bind(this, {nowShowing: clatch.newlog}),
+                    '/log/edit/:id': function(id) { 
+                                            boundSetState({nowShowing: clatch.editlog,
+                                                           id: id}); 
+                                        }
+                    });
                 router.init('/');
             },
 
@@ -44,20 +48,22 @@
                     return <LogDisplay entries={this.props.data}/>;
                 } else if (this.state.nowShowing === clatch.newlog) {
                     return <LogForm />;
-                } else if (this.state.nowShowing === clatch.newlog) {
-                    return <LogForm entry={this.props.data} />;
+                } else if (this.state.nowShowing === clatch.editlog) {
+                    return <LogForm entry={this.props.data} id={this.state.id} />;
                 }
             }
           });
 
 
           var entries = [
-            {body: 'rock your body', 
+            {id: 1,
+             body: 'rock your body', 
              tags: ['butt', 'IsItWorthItLetMeWorkIt'], 
              pages: ['Silk', 'Dragons'], 
              datetime: "07 Apr 2014 08:45"},
 
-            {body: 'dis be body 2', 
+            {id: 2,
+             body: 'dis be body 2', 
              tags: ['peace', 'JustDoIt', 'butt'], 
              pages: ['Rainbows'], datetime: "20 Apr 2014 07:06"}
           ];

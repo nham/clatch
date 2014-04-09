@@ -11,9 +11,16 @@ var LogForm = React.createClass({
         tags = this.props.entry.tags;
     }
 
+    var text = "";
+    if (this.props.id !== undefined) {
+        text = "Edit entry";
+    } else {
+        text = "New log entry";
+    }
+
     return (
       <div className="logForm">
-        New log entry:
+      {text}
         <form>
           <dl>
             <dt>Body:</dt>
