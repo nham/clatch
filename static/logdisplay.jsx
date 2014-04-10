@@ -82,9 +82,12 @@ var LogBox = React.createClass({
 
 var AssocPageList = React.createClass({
   render: function() {
-      var pageNodes = this.props.pages.map(function(page) {
-          return <li>{page}</li>;
-      });
+      var pageNodes = [];
+      if (this.props.pages !== undefined) {
+          var pageNodes = this.props.pages.map(function(page) {
+              return <li>{page}</li>;
+          });
+      }
     return (
       <div className="assocPageList">
           <ul>{pageNodes}</ul>

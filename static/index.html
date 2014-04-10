@@ -1,16 +1,16 @@
 <html>
   <head>
     <title>Clatch</title>
-    <script src="lib/react-0.10.0.js"></script>
-    <script src="lib/JSXTransformer-0.10.0.js"></script>
-    <script src="lib/jquery-2.1.0.js"></script>
-    <script src="lib/director.min.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <script src="/static/react-0.10.0.js"></script>
+    <script src="/static/JSXTransformer-0.10.0.js"></script>
+    <script src="/static/jquery-2.1.0.js"></script>
+    <script src="/static/director.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
   </head>
   <body>
     <div id="content"></div>
-    <script type="text/jsx" src="logdisplay.jsx"></script>
-    <script type="text/jsx" src="logentryform.jsx"></script>
+    <script type="text/jsx" src="/static/logdisplay.jsx"></script>
+    <script type="text/jsx" src="/static/logentryform.jsx"></script>
     <script type="text/jsx">
 /**
 * @jsx React.DOM
@@ -41,9 +41,12 @@
           url: this.props.url,
           dataType: 'json',
           success: function(data) {
-            this.setState({nowShowing: this.state.nowShowing, data: data});
+            console.log("success is my only motherfucking option");
+            console.log(data);
+            this.setState({nowShowing: this.state.nowShowing, data: data['logs']});
           }.bind(this),
           error: function(xhr, status, err) {
+            console.log(err === "");
             console.error(this.props.url, status, err.toString());
           }.bind(this)
         });
@@ -89,7 +92,7 @@
   });
 
   React.renderComponent(
-    <Clatch url="entries.json" />,
+    <Clatch url="/logs" />,
     document.getElementById('content')
   );
 

@@ -82,7 +82,13 @@ def query_page_by_slug(db, slug):
     return page
 
 
-### routes ###
+## static resources ###
+
+@app.route('/')
+def root():
+    return app.send_static_file('index.html')
+
+### restful api ###
 
 @app.route('/logs', methods=['GET'])
 def get_logs():
