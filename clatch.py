@@ -111,7 +111,7 @@ def get_logs():
 
         cur = db.execute(sql, [log['id']])
         tags = cur.fetchall()
-        log['tags'] = [dict(tag) for tag in tags]
+        log['tags'] = [tag['name'] for tag in tags]
 
     return jsonify({ 'logs': logs})
 
@@ -136,7 +136,7 @@ def get_log(id):
 
     cur = db.execute(sql, [log['id']])
     tags = cur.fetchall()
-    log['tags'] = [dict(tag) for tag in tags]
+    log['tags'] = [tag['name'] for tag in tags]
 
     return jsonify({ 'log': log})
 
@@ -240,7 +240,7 @@ def get_pages():
 
         cur = db.execute(sql, [page['id']])
         tags = cur.fetchall()
-        page['tags'] = [dict(tag) for tag in tags]
+        page['tags'] = [tag['name'] for tag in tags]
 
     return jsonify({ 'pages': pages})
 
@@ -264,7 +264,7 @@ def get_page(id):
 
     cur = db.execute(sql, [page['id']])
     tags = cur.fetchall()
-    page['tags'] = [dict(tag) for tag in tags]
+    page['tags'] = [tag['name'] for tag in tags]
 
     return jsonify({ 'page': page})
 
