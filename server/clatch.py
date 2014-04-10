@@ -84,8 +84,8 @@ def query_page_by_slug(db, slug):
 
 ### routes ###
 
-@app.route('/log')
-def show_index():
+@app.route('/logs', methods=['GET'])
+def get_logs():
     db = get_db()
 
     # log entries
@@ -107,47 +107,48 @@ def show_index():
         tags = cur.fetchall()
         log['tags'] = [dict(tag) for tag in tags]
 
-    return render_template('show_index.html', pages=pages, logs=logs)
+    return jsonify({ 'logs': logs})
 
-@app.route('/page/new')
-def show_new_page_form():
+
+@app.route('/logs/<int:id>', methods=['GET'])
+def get_log(id):
     db = get_db()
-    return render_template('show_new_page_form.html')
 
-@app.route('/page/edit/<slug>')
-def show_edit_page_form(slug):
-    db = get_db()
-    page = query_page_by_slug(get_db(), slug)
+    cur = db.execute('select id, body, ts, from logs where id=?', [id])
+    log = cur.fetchone()
 
-    if page is None:
-        return render_template('404.html')
-    else:
-        tags = page['tags']
-        newtags = '#' + tags[0]['name']
+    if log is None:
+        abort(404)
 
-        for tag in tags[1:]:
-            newtags += ' #' + tag['name']
+    log = dict(log)
 
-        page['tags'] = newtags
+    sql = """
+        select name from tags t 
+        LEFT JOIN pages_tags_assoc a ON a.tagid = t.id
+        where a.logid=?
+    """
 
-        return render_template('show_edit_page_form.html', page=page)
+    cur = db.execute(sql, [log['id']])
+    tags = cur.fetchall()
+    log['tags'] = [dict(tag) for tag in tags]
+
+    return jsonify({ 'log': log})
 
 
-@app.route('/log/new')
-def show_new_log_form():
-    db = get_db()
-    return render_template('show_new_log_form.html')
 
-@app.route('/log/add', methods=['POST'])
+@app.route('/logs/', methods=['POST'])
 def add_log():
     db = get_db()
+
+    if not request.json or not 'name' in request.json:
+        abort(400)
 
     cur = db.execute('insert into logs (body, ts) values (?, ?)',
                  [request.form['body'], round(time.time())])
 
     logid = cur.lastrowid
 
-    tags = request.form['tags'].split()
+    tags = request.json['tags'].split()
     for tag in tags:
         t = tag[1:]
         cur = db.execute('select id from tags where name = ?', [t])
@@ -158,10 +159,8 @@ def add_log():
         db.execute('insert into logs_tags_assoc (logid, tagid) values (?, ?)', 
                 [logid, cur.lastrowid])
 
-
     db.commit()
-    flash('New log was successfully posted')
-    return redirect(url_for('show_index'))
+    return jsonify({'id': logid}), 201
 
 
 @app.route('/pages', methods=['GET'])
