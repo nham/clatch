@@ -21,11 +21,29 @@
           clatch.loglist = 'loglist';
           clatch.newlog = 'newlog';
           clatch.editlog = 'editlog';
+          clatch.newpage = 'newpage';
+          clatch.editpage = 'editpage';
 
           var Clatch = React.createClass({
             getInitialState: function() {
-                return {nowShowing: 'loglist'};
+                return {
+                    nowShowing: 'loglist',
+                    data: []
+                };
             },
+
+            componentWillMount: function() {
+                $.ajax({
+                  url: this.props.url,
+                  dataType: 'json',
+                  success: function(data) {
+                    this.setState({nowShowing: this.state.nowShowing, data: data});
+                  }.bind(this),
+                  error: function(xhr, status, err) {
+                    console.error(this.props.url, status, err.toString());
+                  }.bind(this)
+                });
+              },
 
             componentDidMount: function () {
                 var setState = this.setState;
@@ -45,33 +63,27 @@
             render: function() {
                 console.log(this.state.nowShowing);
                 if (this.state.nowShowing === clatch.loglist) {
-                    return <LogDisplay entries={this.props.data}/>;
+
+                    return <LogDisplay entries={this.state.data}/>;
+
                 } else if (this.state.nowShowing === clatch.newlog) {
+
                     return <LogForm />;
+
                 } else if (this.state.nowShowing === clatch.editlog) {
+
                     var id = parseInt(this.state.id, 10);
-                    var entry = this.props.data.filter(function(entry) { return entry['id'] === id; });
+                    var entry = this.state.data.filter(function(entry) { 
+                                    return entry['id'] === id;
+                    });
                     return <LogForm entry={entry[0]} id={this.state.id} />;
+
                 }
             }
           });
 
-
-          var entries = [
-            {id: 1,
-             body: 'rock your body', 
-             tags: ['butt', 'IsItWorthItLetMeWorkIt'], 
-             pages: ['Silk', 'Dragons'], 
-             datetime: "07 Apr 2014 08:45"},
-
-            {id: 2,
-             body: 'dis be body 2', 
-             tags: ['peace', 'JustDoIt', 'butt'], 
-             pages: ['Rainbows'], datetime: "20 Apr 2014 07:06"}
-          ];
-
           React.renderComponent(
-            <Clatch data={entries}/>,
+            <Clatch url="entries.json" />,
             document.getElementById('content')
           );
 
