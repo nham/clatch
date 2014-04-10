@@ -69,9 +69,11 @@ var LogBox = React.createClass({
       });
 
       var editURL = "#/log/edit/" + this.props.entry.id;
+
+      var datetime = moment.unix(this.props.entry.ts).format("DD MMM YYYY HH:mm:ss");
     return (
       <div className="logBox">
-          <div>{this.props.entry.ts}</div>
+          <div>{datetime}</div>
           <div dangerouslySetInnerHTML={{__html: this.props.entry.body}} />
           <ul className="logList">{tagNodes}</ul>
           <a href={editURL}>edit</a>
