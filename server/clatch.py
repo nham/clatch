@@ -114,7 +114,7 @@ def get_logs():
 def get_log(id):
     db = get_db()
 
-    cur = db.execute('select id, body, ts, from logs where id=?', [id])
+    cur = db.execute('select id, body, ts from logs where id=?', [id])
     log = cur.fetchone()
 
     if log is None:
@@ -124,7 +124,7 @@ def get_log(id):
 
     sql = """
         select name from tags t 
-        LEFT JOIN pages_tags_assoc a ON a.tagid = t.id
+        LEFT JOIN logs_tags_assoc a ON a.tagid = t.id
         where a.logid=?
     """
 
