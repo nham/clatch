@@ -163,6 +163,57 @@ def add_log():
     return jsonify({'id': logid}), 201
 
 
+@app.route('/logs/<int:id>', methods=['PUT'])
+def update_log(id):
+    db = get_db()
+
+    cur = db.execute('select id, body from logs where id=?', [id])
+    log = cur.fetchone()
+
+    if log is None:
+        abort(404)
+
+    if not request.json:
+        abort(400)
+
+    cur = db.execute('update logs set body=? where id=?',
+                 [request.json['body'], id])
+
+
+    tags = request.json['tags'].split()
+    new_tags = set()
+    for tag in tags:
+        t = tag[1:]
+        cur = db.execute('select id from tags where name = ?', [t])
+
+        fetch = cur.fetchone()
+        if fetch == None:
+            cur = db.execute('insert into tags (name) values (?)', [t])
+            new_tags.add(cur.lastrowid)
+        else:
+            new_tags.add(fetch[0])
+
+    cur = db.execute("select tagid from logs_tags_assoc where logid = ?", 
+                     [id])
+    fetch = cur.fetchall()
+    old_tags = set([tag[0] for tag in fetch])
+
+    intersection = new_tags & old_tags
+    add_tags = new_tags - intersection
+    remove_tags = old_tags - intersection
+
+    for tag in remove_tags:
+        db.execute('delete from logs_tags_assoc where logid=? and tagid=?',
+                    [id, tag])
+
+    for tag in add_tags:
+        db.execute('insert into logs_tags_assoc (logid, tagid) values (?, ?)', 
+                   [id, tag])
+
+    db.commit()
+    return jsonify({'result': True})
+
+
 @app.route('/pages', methods=['GET'])
 def get_pages():
     db = get_db()
