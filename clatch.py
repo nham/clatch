@@ -1,4 +1,4 @@
-from models import Tag
+from models import Tag, Log, Page
 
 import os
 import sqlite3
@@ -62,28 +62,6 @@ def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 
-def query_page_by_slug(db, slug):
-    cur = db.execute('select id, name, slug, body from pages where slug=? order by id desc', [slug])
-    page = cur.fetchone()
-
-    if page is None:
-        return page
-
-    page = dict(page)
-
-    sql = """
-        select name from tags t 
-        LEFT JOIN pages_tags_assoc a ON a.tagid = t.id
-        where a.pageid=?
-    """
-
-    cur = db.execute(sql, [page['id']])
-    tags = cur.fetchall()
-    page['tags'] = [dict(tag) for tag in tags]
-
-    return page
-
-
 ## static resources ###
 
 @app.route('/')
@@ -96,15 +74,11 @@ def root():
 def get_logs():
     db = get_db()
 
-    # log entries
-    cur = db.execute('select id, body, ts from logs order by id desc')
-    logs = cur.fetchall()
-
-    logs = [dict(log) for log in logs]
+    logs = Log.get_all_entries(db)
 
     for log in logs:
         log['body'] = pandoc_convert(log['body'])
-        log['tags'] = Tag.get_log_tags(db, log['id'])
+        log['tags'] = Tag.get_log_tag_names(db, log['id'])
 
     return jsonify({ 'logs': logs})
 
@@ -113,14 +87,13 @@ def get_logs():
 def get_log(id):
     db = get_db()
 
-    cur = db.execute('select id, body, ts from logs where id=?', [id])
-    log = cur.fetchone()
+    log = Log.get_entry(db, id)
 
     if log is None:
         abort(404)
 
-    log = dict(log)
-    log['tags'] = Tag.get_log_tags(db, log['id'])
+    log['body'] = pandoc_convert(log['body'])
+    log['tags'] = Tag.get_log_tag_names(db, log['id'])
 
     return jsonify({ 'log': log})
 
@@ -157,10 +130,7 @@ def add_log():
 def update_log(id):
     db = get_db()
 
-    cur = db.execute('select id, body from logs where id=?', [id])
-    log = cur.fetchone()
-
-    if log is None:
+    if not Log.entry_exists(id):
         abort(404)
 
     if not request.json:
@@ -208,14 +178,11 @@ def update_log(id):
 def get_pages():
     db = get_db()
 
-    cur = db.execute('select id, name, slug, body from pages order by id desc')
-    pages = cur.fetchall()
-
-    pages = [dict(page) for page in pages]
+    pages = Page.get_all_pages(db)
 
     for page in pages:
         page['body'] = pandoc_convert(page['body'])
-        page['tags'] = Tag.get_page_tags(db, page['id'])
+        page['tags'] = Tag.get_page_tag_names(db, page['id'])
 
     return jsonify({ 'pages': pages})
 
@@ -223,14 +190,13 @@ def get_pages():
 def get_page(id):
     db = get_db()
 
-    cur = db.execute('select id, name, slug, body from pages where id=?', [id])
-    page = cur.fetchone()
+    page = Page.get_entry(db, id)
 
     if page is None:
         abort(404)
 
     page = dict(page)
-    page['tags'] = Tag.get_page_tags(db, page['id'])
+    page['tags'] = Tag.get_page_tag_names(db, page['id'])
 
     return jsonify({ 'page': page})
 
@@ -266,10 +232,7 @@ def add_page():
 def update_page(id):
     db = get_db()
 
-    cur = db.execute('select id, name, slug, body from pages where id=?', [id])
-    page = cur.fetchone()
-
-    if page is None:
+    if not Page.page_exists(id):
         abort(404)
 
     if not request.json:
