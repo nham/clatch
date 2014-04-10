@@ -6,6 +6,7 @@ var LogForm = React.createClass({
   handleSubmit: function() {
       var body = this.refs.body.getDOMNode().value;
       var tags = this.refs.tags.getDOMNode().value;
+      this.props.onFormSubmit({body: body, tags: tags});
 
       return false; // prevents default action of the browser
   },

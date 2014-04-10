@@ -12,82 +12,88 @@
     <script type="text/jsx" src="logdisplay.jsx"></script>
     <script type="text/jsx" src="logentryform.jsx"></script>
     <script type="text/jsx">
-      /**
-       * @jsx React.DOM
-       */
-      
-      (function() {
-          var clatch = {};
-          clatch.loglist = 'loglist';
-          clatch.newlog = 'newlog';
-          clatch.editlog = 'editlog';
-          clatch.newpage = 'newpage';
-          clatch.editpage = 'editpage';
+/**
+* @jsx React.DOM
+*/
 
-          var Clatch = React.createClass({
-            getInitialState: function() {
-                return {
-                    nowShowing: 'loglist',
-                    data: []
-                };
-            },
+(function() {
+  var clatch = {};
+  clatch.loglist = 'loglist';
+  clatch.newlog = 'newlog';
+  clatch.editlog = 'editlog';
+  clatch.newpage = 'newpage';
+  clatch.editpage = 'editpage';
 
-            componentWillMount: function() {
-                $.ajax({
-                  url: this.props.url,
-                  dataType: 'json',
-                  success: function(data) {
-                    this.setState({nowShowing: this.state.nowShowing, data: data});
-                  }.bind(this),
-                  error: function(xhr, status, err) {
-                    console.error(this.props.url, status, err.toString());
-                  }.bind(this)
-                });
-              },
+  var Clatch = React.createClass({
+    getInitialState: function() {
+        return {
+            nowShowing: 'loglist',
+            data: []
+        };
+    },
 
-            componentDidMount: function () {
-                var setState = this.setState;
-                var boundSetState = setState.bind(this);
+    handleFormSubmit: function(logEntry) {
+        //TODO
+    },
 
-                var router = Router({
-                    '/': setState.bind(this, {nowShowing: clatch.loglist}),
-                    '/log/new': setState.bind(this, {nowShowing: clatch.newlog}),
-                    '/log/edit/:id': function(id) { 
-                                            boundSetState({nowShowing: clatch.editlog,
-                                                           id: id}); 
-                                        }
-                    });
-                router.init('/');
-            },
+    componentWillMount: function() {
+        $.ajax({
+          url: this.props.url,
+          dataType: 'json',
+          success: function(data) {
+            this.setState({nowShowing: this.state.nowShowing, data: data});
+          }.bind(this),
+          error: function(xhr, status, err) {
+            console.error(this.props.url, status, err.toString());
+          }.bind(this)
+        });
+      },
 
-            render: function() {
-                console.log(this.state.nowShowing);
-                if (this.state.nowShowing === clatch.loglist) {
+    componentDidMount: function () {
+        var setState = this.setState;
+        var boundSetState = setState.bind(this);
 
-                    return <LogDisplay entries={this.state.data}/>;
+        var router = Router({
+            '/': setState.bind(this, {nowShowing: clatch.loglist}),
+            '/log/new': setState.bind(this, {nowShowing: clatch.newlog}),
+            '/log/edit/:id': function(id) { 
+                                    boundSetState({nowShowing: clatch.editlog,
+                                                   id: id}); 
+                                }
+            });
+        router.init('/');
+    },
 
-                } else if (this.state.nowShowing === clatch.newlog) {
+    render: function() {
+        console.log(this.state.nowShowing);
+        if (this.state.nowShowing === clatch.loglist) {
 
-                    return <LogForm />;
+            return <LogDisplay entries={this.state.data}/>;
 
-                } else if (this.state.nowShowing === clatch.editlog) {
+        } else if (this.state.nowShowing === clatch.newlog) {
 
-                    var id = parseInt(this.state.id, 10);
-                    var entry = this.state.data.filter(function(entry) { 
-                                    return entry['id'] === id;
-                    });
-                    return <LogForm entry={entry[0]} id={this.state.id} />;
+            return <LogForm />;
 
-                }
-            }
-          });
+        } else if (this.state.nowShowing === clatch.editlog) {
 
-          React.renderComponent(
-            <Clatch url="entries.json" />,
-            document.getElementById('content')
-          );
+            var id = parseInt(this.state.id, 10);
+            var entry = this.state.data.filter(function(entry) { 
+                            return entry['id'] === id;
+            });
 
-    })();
+            return <LogForm entry={entry[0]} id={this.state.id} 
+                            onFormSubmit={this.handleFormSubmit} />;
+
+        }
+    }
+  });
+
+  React.renderComponent(
+    <Clatch url="entries.json" />,
+    document.getElementById('content')
+  );
+
+})();
     </script>
   </body>
 </html>
