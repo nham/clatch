@@ -1,3 +1,5 @@
+from models import Tag
+
 import os
 import sqlite3
 import time
@@ -102,16 +104,7 @@ def get_logs():
 
     for log in logs:
         log['body'] = pandoc_convert(log['body'])
-
-        sql = """
-            select name from tags t 
-            LEFT JOIN logs_tags_assoc a ON a.tagid = t.id
-            where a.logid=?
-        """
-
-        cur = db.execute(sql, [log['id']])
-        tags = cur.fetchall()
-        log['tags'] = [tag['name'] for tag in tags]
+        log['tags'] = Tag.get_log_tags(db, log['id'])
 
     return jsonify({ 'logs': logs})
 
@@ -127,16 +120,7 @@ def get_log(id):
         abort(404)
 
     log = dict(log)
-
-    sql = """
-        select name from tags t 
-        LEFT JOIN logs_tags_assoc a ON a.tagid = t.id
-        where a.logid=?
-    """
-
-    cur = db.execute(sql, [log['id']])
-    tags = cur.fetchall()
-    log['tags'] = [tag['name'] for tag in tags]
+    log['tags'] = Tag.get_log_tags(db, log['id'])
 
     return jsonify({ 'log': log})
 
@@ -231,16 +215,7 @@ def get_pages():
 
     for page in pages:
         page['body'] = pandoc_convert(page['body'])
-
-        sql = """
-            select name from tags t 
-            LEFT JOIN pages_tags_assoc a ON a.tagid = t.id
-            where a.pageid=?
-        """
-
-        cur = db.execute(sql, [page['id']])
-        tags = cur.fetchall()
-        page['tags'] = [tag['name'] for tag in tags]
+        page['tags'] = Tag.get_page_tags(db, page['id'])
 
     return jsonify({ 'pages': pages})
 
@@ -255,16 +230,7 @@ def get_page(id):
         abort(404)
 
     page = dict(page)
-
-    sql = """
-        select name from tags t 
-        LEFT JOIN pages_tags_assoc a ON a.tagid = t.id
-        where a.pageid=?
-    """
-
-    cur = db.execute(sql, [page['id']])
-    tags = cur.fetchall()
-    page['tags'] = [tag['name'] for tag in tags]
+    page['tags'] = Tag.get_page_tags(db, page['id'])
 
     return jsonify({ 'page': page})
 
