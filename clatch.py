@@ -99,11 +99,11 @@ def get_log(id):
 
 
 
-@app.route('/logs/', methods=['POST'])
+@app.route('/logs', methods=['POST'])
 def add_log():
     db = get_db()
 
-    if not request.json or not 'name' in request.json:
+    if not request.json:
         abort(400)
 
     cur = db.execute('insert into logs (body, ts) values (?, ?)',
@@ -201,7 +201,7 @@ def get_page(id):
     return jsonify({ 'page': page})
 
 
-@app.route('/pages/', methods=['POST'])
+@app.route('/pages', methods=['POST'])
 def add_page():
     db = get_db()
 
