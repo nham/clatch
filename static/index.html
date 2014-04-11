@@ -34,8 +34,21 @@
     },
 
     handleFormSubmit: function(logEntry) {
-        //TODO
-    },
+        // TODO: make this alternatively POST or PUT depending on whether its edit form or new form
+        console.log(logEntry);
+        $.ajax({
+          url: '/logs',
+          contentType: 'application/json',
+          type: 'POST',
+          data: {'body': logEntry.body, 'tags': logEntry.tags},
+          success: function(data) {
+            console.log(data);
+          }.bind(this),
+          error: function(xhr, status, err) {
+            console.error(this.props.url, status, err.toString());
+          }.bind(this)
+        });
+      },
 
     componentWillMount: function() {
         $.ajax({
@@ -47,7 +60,6 @@
             this.setState({nowShowing: this.state.nowShowing, data: data['logs']});
           }.bind(this),
           error: function(xhr, status, err) {
-            console.log(err === "");
             console.error(this.props.url, status, err.toString());
           }.bind(this)
         });
@@ -76,7 +88,7 @@
 
         } else if (this.state.nowShowing === clatch.newlog) {
 
-            return <LogForm />;
+            return <LogForm onFormSubmit={this.handleFormSubmit} />;
 
         } else if (this.state.nowShowing === clatch.editlog) {
 
