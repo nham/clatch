@@ -107,7 +107,7 @@ def add_log():
         abort(400)
 
     cur = db.execute('insert into logs (body, ts) values (?, ?)',
-                 [request.form['body'], round(time.time())])
+                 [request.json['body'], round(time.time())])
 
     logid = cur.lastrowid
 
