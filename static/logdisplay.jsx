@@ -12,6 +12,27 @@
 
  */
 var LogDisplay = React.createClass({
+  getInitialState: function() {
+      return {
+          entries: []
+      };
+  },
+
+  componentWillMount: function() {
+    $.ajax({
+      url: '/logs',
+      dataType: 'json',
+      success: function(data) {
+          console.log('LogDisplay success');
+        console.log(data);
+        this.setState({entries: data['logs']});
+      }.bind(this),
+      error: function(xhr, status, err) {
+        console.error('/logs', status, err.toString());
+      }.bind(this)
+    });
+  },
+
   render: function() {
     return (
       <div className="logDisplay">
@@ -20,7 +41,7 @@ var LogDisplay = React.createClass({
             <li><a href="#/">index</a></li>
             <li><a href="#/log/new">new log entry</a></li>
         </ul>
-        <LogList entries={this.props.entries} />
+        <LogList entries={this.state.entries} />
       </div>
     );
   }

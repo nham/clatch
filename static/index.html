@@ -29,41 +29,9 @@
     getInitialState: function() {
         return {
             nowShowing: 'loglist',
-            data: []
+            id: null,
         };
     },
-
-    handleFormSubmit: function(logEntry) {
-        // TODO: make this alternatively POST or PUT depending on whether its edit form or new form
-        console.log(logEntry);
-        $.ajax({
-          url: '/logs',
-          contentType: 'application/json',
-          type: 'POST',
-          data: JSON.stringify({'body': logEntry.body, 'tags': logEntry.tags}),
-          success: function(data) {
-            console.log(data);
-          }.bind(this),
-          error: function(xhr, status, err) {
-            console.error(this.props.url, status, err.toString());
-          }.bind(this)
-        });
-      },
-
-    componentWillMount: function() {
-        $.ajax({
-          url: this.props.url,
-          dataType: 'json',
-          success: function(data) {
-            console.log("success is my only motherfucking option");
-            console.log(data);
-            this.setState({nowShowing: this.state.nowShowing, data: data['logs']});
-          }.bind(this),
-          error: function(xhr, status, err) {
-            console.error(this.props.url, status, err.toString());
-          }.bind(this)
-        });
-      },
 
     componentDidMount: function () {
         var setState = this.setState;
@@ -84,21 +52,19 @@
         console.log(this.state.nowShowing);
         if (this.state.nowShowing === clatch.loglist) {
 
-            return <LogDisplay entries={this.state.data}/>;
+            return <LogDisplay />;
 
         } else if (this.state.nowShowing === clatch.newlog) {
 
-            return <LogForm onFormSubmit={this.handleFormSubmit} />;
+            return <LogFormStateHolder />;
 
         } else if (this.state.nowShowing === clatch.editlog) {
 
-            var id = parseInt(this.state.id, 10);
-            var entry = this.state.data.filter(function(entry) { 
-                            return entry['id'] === id;
-            });
-
-            return <LogForm entry={entry[0]} id={this.state.id} 
-                            onFormSubmit={this.handleFormSubmit} />;
+            if (this.state.id !== null) {
+                return <LogFormStateHolder id={this.state.id} />;
+            } else {
+                return <LogFormStateHolder />;
+            }
 
         }
     }
