@@ -103,7 +103,7 @@ def get_log(id):
 def add_log():
     db = get_db()
 
-    if not request.json:
+    if not request.get_json():
         abort(400)
 
     cur = db.execute('insert into logs (body, ts) values (?, ?)',
